@@ -1,0 +1,63 @@
+================================================================================
+           COMO FUNCIONA O PROJETO? (EXPLICAÇÃO SIMPLIFICADA)
+================================================================================
+
+Este projeto é um "Gerenciador de Despesas Pessoais". Ele foi construído dividindo
+o sistema em duas partes independentes que conversam entre si: o BACKEND (o cérebro
+e armazém invisível) e o FRONTEND (a tela bonita com a qual o usuário interage).
+
+Aqui está uma explicação simples de como essas tecnologias trabalham juntas:
+
+--------------------------------------------------------------------------------
+1. O BACKEND (O Cérebro e o Estoque) - Tecnologias: Django & PostgreSQL (Neon)
+--------------------------------------------------------------------------------
+Pense no Backend como a cozinha de um restaurante: o cliente não a vê, mas é lá
+que toda a comida (dados) é preparada e guardada.
+
+- Django: É o sistema gerente. Ele decide o que pode e o que não pode ser feito.
+  Por exemplo, se alguém tentar cadastrar uma despesa com valor negativo (R$ -10),
+  é o Django quem barra e diz "isso é inválido".
+- Banco de Dados (PostgreSQL via Neon ou SQLite local): É o arquivo de metal onde
+  as informações ficam guardadas de forma segura. Mesmo se você desligar o 
+  computador, as despesas continuam salvas lá dentro.
+- API REST: É o "garçom". Quando o frontend quer ver a lista de despesas ou
+  salvar uma despesa nova, ele não mexe direto no banco de dados. Ele pede para a
+  API (o garçom), que leva o pedido até o Django, processa e traz de volta.
+
+--------------------------------------------------------------------------------
+2. O FRONTEND (A Fachada e o Menu) - Tecnologias: React, Recharts & Vanilla CSS
+--------------------------------------------------------------------------------
+Pense no Frontend como o salão do restaurante: a mesa, o menu físico e os pratos
+servidos. É a parte visual que reage na hora.
+
+- React: É a tecnologia que constrói a tela. A grande mágica do React é que ele 
+  atualiza partes da tela instantaneamente quando algo muda (como quando você 
+  filtra por "Lazer" ou remove uma despesa) sem precisar recarregar a página inteira.
+- Recharts: É a biblioteca responsável por desenhar o gráfico colorido de gastos
+  por categoria na tela. Ela lê os dados numéricos e desenha o gráfico de forma
+  suave.
+- CSS Vanilla: É a "maquiagem" do projeto. Define a paleta de cores escura e
+  moderna, as bordas translúcidas (efeito vidro), o espaçamento dos botões e as
+  animações de hover (quando você passa o mouse por cima de um item).
+
+--------------------------------------------------------------------------------
+3. O FLUXO DE UMA AÇÃO (Exemplo: Cadastrar um gasto de R$ 50 no Supermercado)
+--------------------------------------------------------------------------------
+
+Para entender a integração, veja o caminho que a informação faz:
+
+1. O Usuário digita na tela: "Supermercado", "R$ 50,00", escolhe "Alimentação",
+   coloca a data de hoje e clica no botão "Adicionar".
+2. O React (Frontend) recolhe esses textos, formata em um envelope digital e 
+   envia pela internet (requisição HTTP).
+3. O "Garçom" (API) entrega o envelope para o Django (Backend).
+4. O Django abre o envelope e faz as checagens: "O título existe?", "O valor é 
+   positivo?". Se tudo estiver correto, ele salva essa linha no banco de dados.
+5. O Django envia um bilhete de volta para o React dizendo: "Tudo certo! Salvei."
+6. Ao receber o sinal verde, o React:
+   - Recalcula instantaneamente os cards do topo (somando os R$ 50 no total).
+   - Insere a nova despesa no topo da lista.
+   - Atualiza o gráfico de barras, fazendo a barra de "Alimentação" crescer.
+   - Dispara uma chuva de confetes virtuais coloridos na tela para celebrar o cadastro!
+
+Tudo isso acontece em frações de segundo!
