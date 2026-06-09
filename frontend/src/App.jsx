@@ -82,20 +82,8 @@ export default function App() {
             <Wallet size={24} />
           </div>
           <div>
-            <h1 className="logo-title">Finanças</h1>
+            <h1 className="logo-title">Vesta - Gerenciamento de Despesas</h1>
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className="badge-dev">Controle Financeiro</span>
-          <button 
-            onClick={() => loadExpenses()} 
-            className="btn-edit-icon" 
-            style={{ padding: '0.5rem', borderRadius: '8px' }}
-            title="Atualizar dados"
-            aria-label="Atualizar dados"
-          >
-            <RefreshCw size={16} className={loading ? 'spinner' : ''} />
-          </button>
         </div>
       </header>
 
@@ -104,7 +92,12 @@ export default function App() {
 
       {/* Barra de Filtros */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <Filters filters={filters} onFilterChange={handleFilterChange} />
+        <Filters 
+          filters={filters} 
+          onFilterChange={handleFilterChange} 
+          onRefresh={loadExpenses}
+          loading={loading}
+        />
       </div>
 
       {/* Grid Principal */}

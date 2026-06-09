@@ -1,7 +1,7 @@
 import React from 'react';
-import { Filter } from 'lucide-react';
+import { Filter, RefreshCw } from 'lucide-react';
 
-export default function Filters({ filters, onFilterChange }) {
+export default function Filters({ filters, onFilterChange, onRefresh, loading }) {
   const categories = [
     { value: '', label: 'Todas as Categorias' },
     { value: 'alimentacao', label: 'Alimentação' },
@@ -96,15 +96,26 @@ export default function Filters({ filters, onFilterChange }) {
         </select>
       </div>
 
-      {hasActiveFilters && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        {hasActiveFilters && (
+          <button 
+            onClick={handleClearFilters}
+            className="btn btn-secondary"
+            style={{ width: 'auto', padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+          >
+            Limpar Filtros
+          </button>
+        )}
         <button 
-          onClick={handleClearFilters}
-          className="btn btn-secondary"
-          style={{ width: 'auto', padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+          onClick={onRefresh} 
+          className="btn-edit-icon" 
+          style={{ padding: '0.45rem', borderRadius: 'var(--radius-sm)' }}
+          title="Atualizar dados"
+          aria-label="Atualizar dados"
         >
-          Limpar Filtros
+          <RefreshCw size={15} className={loading ? 'spinner' : ''} />
         </button>
-      )}
+      </div>
     </div>
   );
 }
