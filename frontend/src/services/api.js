@@ -1,4 +1,16 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+// Remove trailing slash if present
+if (baseUrl.endsWith('/')) {
+  baseUrl = baseUrl.slice(0, -1);
+}
+
+// If it doesn't end with /api, append it
+if (!baseUrl.endsWith('/api')) {
+  baseUrl = `${baseUrl}/api`;
+}
+
+const API_BASE_URL = baseUrl;
 
 /**
  * Constrói a URL com os parâmetros de consulta fornecidos.
