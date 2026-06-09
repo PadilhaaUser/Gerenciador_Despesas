@@ -15,7 +15,23 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-7odlz*f*wnmk%w9yexu)-3damj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+raw_hosts = os.getenv('ALLOWED_HOSTS', '*')
+parsed_hosts = []
+for host in raw_hosts.split(','):
+    host = host.strip()
+    if not host:
+        continue
+    # Remove protocol if user included it
+    if host.startswith('https://'):
+        host = host[8:]
+    elif host.startswith('http://'):
+        host = host[7:]
+    # Remove path or trailing slash if user included it
+    if '/' in host:
+        host = host.split('/')[0]
+    parsed_hosts.append(host)
+
+ALLOWED_HOSTS = parsed_hosts
 
 
 # Application definition
