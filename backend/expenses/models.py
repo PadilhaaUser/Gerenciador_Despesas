@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class Expense(models.Model):
     CATEGORIA_CHOICES = [
@@ -9,6 +10,14 @@ class Expense(models.Model):
         ('outros', 'Outros'),
     ]
 
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='expenses', 
+        null=True, 
+        blank=True,
+        verbose_name="Usuário"
+    )
     titulo = models.CharField(max_length=255, verbose_name="Título")
     valor = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor")
     categoria = models.CharField(

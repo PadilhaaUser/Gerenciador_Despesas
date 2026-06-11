@@ -5,17 +5,26 @@ import Filters from './components/Filters';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import ExpenseChart from './components/ExpenseChart';
-import { Wallet, PieChart, RefreshCw, AlertTriangle } from 'lucide-react';
+import LandingPage from './components/LandingPage';
+import Auth from './components/Auth';
+import { Wallet, PieChart, AlertTriangle, LogOut, User as UserIcon } from 'lucide-react';
 
 export default function App() {
+  // Controle de Sessão e Rotas Condicionais
+  const [user, setUser] = useState(api.getCurrentUser());
+  const [token, setToken] = useState(localStorage.getItem('vesta_token'));
+  const [view, setView] = useState(localStorage.getItem('vesta_token') ? 'app' : 'landing');
+  const [authMode, setAuthMode] = useState('login');
+
   const [expenses, setExpenses] = useState([]);
   const [filters, setFilters] = useState({ categoria: '', mes: '', ano: '' });
   const [editingExpense, setEditingExpense] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Carrega as despesas sempre que os filtros mudarem
+  // Carrega as despesas sempre que os filtros mudarem e o usuário estiver logado
   const loadExpenses = async (activeFilters = filters) => {
+    if (!token) return;
     setLoading(true);
     setError(null);
     try {
@@ -30,8 +39,10 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadExpenses();
-  }, [filters]);
+    if (token && view === 'app') {
+      loadExpenses();
+    }
+  }, [filters, token, view]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
@@ -73,8 +84,46 @@ export default function App() {
     setEditingExpense(null);
   };
 
+  // Callback de sucesso na autenticação (login ou cadastro)
+  const handleAuthSuccess = (loggedUser, authToken) => {
+    setUser(loggedUser);
+    setToken(authToken);
+    setView('app');
+  };
+
+  // Callback de logout
+  const handleLogout = () => {
+    api.logout();
+    setUser(null);
+    setToken(null);
+    setExpenses([]);
+    setView('landing');
+  };
+
+  // Roteamento condicional baseado no estado 'view'
+  if (view === 'landing') {
+    return (
+      <LandingPage 
+        onNavigateToAuth={(mode) => {
+          setAuthMode(mode);
+          setView('auth');
+        }} 
+      />
+    );
+  }
+
+  if (view === 'auth') {
+    return (
+      <Auth 
+        initialMode={authMode} 
+        onAuthSuccess={handleAuthSuccess} 
+        onBackToLanding={() => setView('landing')} 
+      />
+    );
+  }
+
   return (
-    <div className="app-container">
+    <div className="app-container animate-fade-in">
       {/* Header */}
       <header className="app-header">
         <div className="logo-section">
@@ -82,9 +131,28 @@ export default function App() {
             <Wallet size={24} />
           </div>
           <div>
-            <h1 className="logo-title">Vesta - Gerenciamento de Despesas</h1>
+            <h1 className="logo-title">Vesta - Gerenciador de Despesas</h1>
           </div>
         </div>
+
+        {user && (
+          <div className="user-profile-header">
+            <div className="user-info">
+              <div className="user-avatar">
+                <UserIcon size={16} />
+              </div>
+              <span className="username-display">{user.username}</span>
+            </div>
+            <button 
+              onClick={handleLogout} 
+              className="btn btn-secondary logout-btn" 
+              style={{ width: 'auto', padding: '0.45rem 1rem' }}
+            >
+              <LogOut size={16} />
+              <span>Sair</span>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Cards de Resumo */}
