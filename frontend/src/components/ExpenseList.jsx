@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Edit3, Inbox, Calendar, Tag } from 'lucide-react';
+import { Trash2, Edit3, Inbox, Calendar, Tag, Building2 } from 'lucide-react';
 
 export default function ExpenseList({ expenses, onDelete, onEdit, editingId }) {
   // Formatar Moeda em BRL
@@ -58,6 +58,22 @@ export default function ExpenseList({ expenses, onDelete, onEdit, editingId }) {
                     <span className={`badge ${expense.categoria}`}>
                       {expense.categoria_display}
                     </span>
+                    {expense.banco_nome && (
+                      <>
+                        <span className="dot" />
+                        <span 
+                          className="badge bank-badge"
+                          style={{ 
+                            background: expense.banco_cor ? `${expense.banco_cor}20` : 'rgba(107,114,128,0.15)',
+                            color: expense.banco_cor || '#6b7280',
+                            borderLeft: `3px solid ${expense.banco_cor || '#6b7280'}`
+                          }}
+                        >
+                          <Building2 size={10} />
+                          {expense.banco_nome}
+                        </span>
+                      </>
+                    )}
                     <span className="dot" />
                     <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                       <Calendar size={12} /> {formatDate(expense.data)}

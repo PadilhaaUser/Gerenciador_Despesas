@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Save, XCircle } from 'lucide-react';
+import { PlusCircle, Save, XCircle, Building2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit }) {
+export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, banks = [] }) {
   const initialFormState = {
     titulo: '',
     valor: '',
     categoria: 'alimentacao',
     data: new Date().toISOString().split('T')[0], // Padrão para hoje
     descricao: '',
+    banco: '',
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -24,6 +25,7 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit }) 
         categoria: editingExpense.categoria,
         data: editingExpense.data,
         descricao: editingExpense.descricao || '',
+        banco: editingExpense.banco || '',
       });
       setErrors({});
     } else {
@@ -62,7 +64,12 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit }) 
 
     setSubmitting(true);
     try {
-      await onSubmit(formData);
+      // Prepara os dados: se banco for string vazia, envia null
+      const dataToSend = {
+        ...formData,
+        banco: formData.banco ? parseInt(formData.banco) : null,
+      };
+      await onSubmit(dataToSend);
       
       // Animação de confete apenas ao criar novas despesas!
       if (!editingExpense) {
@@ -199,6 +206,33 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit }) 
             </span>
           )}
         </div>
+
+        {/* Banco (Opcional) */}
+        {banks.length > 0 && (
+          <div className="form-group">
+            <label htmlFor="banco" className="form-label">
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Building2 size={14} />
+                Banco (Opcional)
+              </span>
+            </label>
+            <select
+              id="banco"
+              name="banco"
+              value={formData.banco}
+              onChange={handleChange}
+              className="select-custom"
+              style={{ width: '100%' }}
+            >
+              <option value="">Sem banco associado</option>
+              {banks.map(bank => (
+                <option key={bank.id} value={bank.id}>
+                  {bank.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Descrição */}
         <div className="form-group">

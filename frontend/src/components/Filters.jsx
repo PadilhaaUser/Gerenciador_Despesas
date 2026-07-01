@@ -1,7 +1,7 @@
 import React from 'react';
 import { Filter, RefreshCw } from 'lucide-react';
 
-export default function Filters({ filters, onFilterChange, onRefresh, loading }) {
+export default function Filters({ filters, onFilterChange, onRefresh, loading, banks = [] }) {
   const categories = [
     { value: '', label: 'Todas as Categorias' },
     { value: 'alimentacao', label: 'Alimentação' },
@@ -42,10 +42,10 @@ export default function Filters({ filters, onFilterChange, onRefresh, loading })
   };
 
   const handleClearFilters = () => {
-    onFilterChange({ categoria: '', mes: '', ano: '' });
+    onFilterChange({ categoria: '', mes: '', ano: '', banco: '' });
   };
 
-  const hasActiveFilters = filters.categoria || filters.mes || filters.ano;
+  const hasActiveFilters = filters.categoria || filters.mes || filters.ano || filters.banco;
 
   return (
     <div className="glass-card filters-bar" style={{ padding: '1rem 1.25rem' }}>
@@ -94,6 +94,24 @@ export default function Filters({ filters, onFilterChange, onRefresh, loading })
             </option>
           ))}
         </select>
+
+        {/* Filtro por Banco */}
+        {banks.length > 0 && (
+          <select
+            name="banco"
+            value={filters.banco}
+            onChange={handleChange}
+            className="select-custom"
+            aria-label="Filtrar por banco"
+          >
+            <option value="">Todos os Bancos</option>
+            {banks.map((bank) => (
+              <option key={bank.id} value={bank.id}>
+                {bank.nome}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

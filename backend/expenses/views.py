@@ -5,8 +5,29 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-from .models import Expense
-from .serializers import ExpenseSerializer
+from .models import Expense, Bank
+from .serializers import ExpenseSerializer, BankSerializer
+
+
+class BankViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para listar, criar, detalhar, editar e deletar bancos.
+    Exige autenticação por Token e filtra bancos pelo usuário autenticado.
+    """
+    serializer_class = BankSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Bank.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
 
 class ExpenseViewSet(viewsets.ModelViewSet):
     """
@@ -40,10 +61,23 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             except ValueError:
                 pass  # Ignora caso o ano seja inválido
 
+        # Filtro por banco
+        banco = self.request.query_params.get('banco')
+        if banco:
+            try:
+                queryset = queryset.filter(banco_id=int(banco))
+            except ValueError:
+                pass  # Ignora caso o banco seja inválido
+
         return queryset
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 
 class RegisterView(APIView):

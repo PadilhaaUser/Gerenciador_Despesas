@@ -33,6 +33,11 @@ for host in raw_hosts.split(','):
 
 ALLOWED_HOSTS = parsed_hosts
 
+# Sempre permitir localhost para desenvolvimento local
+for local in ['localhost', '127.0.0.1']:
+    if local not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(local)
+
 
 # Application definition
 
@@ -165,6 +170,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # mantendo o fallback para permitir tudo se não especificado.
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else []
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True').lower() in ('true', '1', 't')
+
+# Sempre incluir localhost para desenvolvimento local
+_LOCAL_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+for origin in _LOCAL_ORIGINS:
+    if origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(origin)
 
 # Configurações do Django Rest Framework
 REST_FRAMEWORK = {

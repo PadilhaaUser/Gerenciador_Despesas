@@ -7,20 +7,23 @@ import ExpenseList from './components/ExpenseList';
 import ExpenseChart from './components/ExpenseChart';
 import LandingPage from './components/LandingPage';
 import Auth from './components/Auth';
-import { Wallet, PieChart, AlertTriangle, LogOut, User as UserIcon } from 'lucide-react';
+import BankManager from './components/BankManager';
+import { Wallet, PieChart, AlertTriangle, LogOut, User as UserIcon, Building2 } from 'lucide-react';
 
 export default function App() {
   // Controle de Sessão e Rotas Condicionais
   const [user, setUser] = useState(api.getCurrentUser());
-  const [token, setToken] = useState(localStorage.getItem('vesta_token'));
-  const [view, setView] = useState(localStorage.getItem('vesta_token') ? 'app' : 'landing');
+  const [token, setToken] = useState(sessionStorage.getItem('vesta_token'));
+  const [view, setView] = useState(sessionStorage.getItem('vesta_token') ? 'app' : 'landing');
   const [authMode, setAuthMode] = useState('login');
 
   const [expenses, setExpenses] = useState([]);
-  const [filters, setFilters] = useState({ categoria: '', mes: '', ano: '' });
+  const [banks, setBanks] = useState([]);
+  const [filters, setFilters] = useState({ categoria: '', mes: '', ano: '', banco: '' });
   const [editingExpense, setEditingExpense] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showBankManager, setShowBankManager] = useState(false);
 
   // Carrega as despesas sempre que os filtros mudarem e o usuário estiver logado
   const loadExpenses = async (activeFilters = filters) => {
@@ -38,9 +41,21 @@ export default function App() {
     }
   };
 
+  // Carrega os bancos do usuário
+  const loadBanks = async () => {
+    if (!token) return;
+    try {
+      const data = await api.getBanks();
+      setBanks(data);
+    } catch (err) {
+      console.error('Erro ao carregar bancos:', err);
+    }
+  };
+
   useEffect(() => {
     if (token && view === 'app') {
       loadExpenses();
+      loadBanks();
     }
   }, [filters, token, view]);
 
@@ -97,7 +112,24 @@ export default function App() {
     setUser(null);
     setToken(null);
     setExpenses([]);
+    setBanks([]);
     setView('landing');
+  };
+
+  // ─── Bancos ─────────────────────────────────────────────
+  const handleAddBank = async (bankData) => {
+    await api.createBank(bankData);
+    await loadBanks();
+  };
+
+  const handleDeleteBank = async (bankId) => {
+    await api.deleteBank(bankId);
+    // Se o filtro ativo era o banco excluído, limpa o filtro
+    if (filters.banco === String(bankId)) {
+      setFilters(prev => ({ ...prev, banco: '' }));
+    }
+    await loadBanks();
+    await loadExpenses();
   };
 
   // Roteamento condicional baseado no estado 'view'
@@ -137,6 +169,15 @@ export default function App() {
 
         {user && (
           <div className="user-profile-header">
+            <button
+              onClick={() => setShowBankManager(true)}
+              className="btn btn-secondary"
+              style={{ width: 'auto', padding: '0.45rem 1rem' }}
+              title="Gerenciar bancos"
+            >
+              <Building2 size={16} />
+              <span>Bancos{banks.length > 0 ? ` (${banks.length})` : ''}</span>
+            </button>
             <div className="user-info">
               <div className="user-avatar">
                 <UserIcon size={16} />
@@ -156,7 +197,7 @@ export default function App() {
       </header>
 
       {/* Cards de Resumo */}
-      <SummaryCards expenses={expenses} />
+      <SummaryCards expenses={expenses} banks={banks} />
 
       {/* Barra de Filtros */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -165,6 +206,7 @@ export default function App() {
           onFilterChange={handleFilterChange} 
           onRefresh={loadExpenses}
           loading={loading}
+          banks={banks}
         />
       </div>
 
@@ -227,9 +269,20 @@ export default function App() {
             onSubmit={handleSubmitExpense}
             editingExpense={editingExpense}
             onCancelEdit={handleCancelEdit}
+            banks={banks}
           />
         </div>
       </div>
+
+      {/* Modal de Gerenciamento de Bancos */}
+      {showBankManager && (
+        <BankManager
+          banks={banks}
+          onAddBank={handleAddBank}
+          onDeleteBank={handleDeleteBank}
+          onClose={() => setShowBankManager(false)}
+        />
+      )}
     </div>
   );
 }
