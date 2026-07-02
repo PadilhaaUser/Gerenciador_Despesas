@@ -217,8 +217,8 @@ REST_FRAMEWORK = {
 # SEGURANÇA EM PRODUÇÃO
 # ============================================
 if not DEBUG:
-    # Forçar HTTPS
-    SECURE_SSL_REDIRECT = True
+    # Forçar HTTPS — desabilitável via variável de ambiente para testes locais com DEBUG=False
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 't')
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
     # HSTS (HTTP Strict Transport Security)
@@ -235,3 +235,4 @@ if not DEBUG:
     # Proteções de conteúdo
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+
