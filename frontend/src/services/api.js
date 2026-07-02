@@ -256,5 +256,53 @@ export const api = {
       throw new Error('Falha ao remover a despesa.');
     }
     return true;
+  },
+
+  // ─── Mensalidades / Despesas Recorrentes ───────────────────
+
+  /**
+   * Cria uma nova mensalidade recorrente e suas parcelas
+   * @param {Object} recurringData
+   */
+  async createRecurringExpense(recurringData) {
+    const url = `${API_BASE_URL}/recurring-expenses/`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(recurringData),
+    });
+
+    if (response.status === 401) {
+      api.logout();
+      window.location.reload();
+      throw new Error('Sessão expirada.');
+    }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw errorData;
+    }
+    return response.json();
+  },
+
+  /**
+   * Remove uma mensalidade e todas as suas parcelas associadas
+   * @param {number|string} id
+   */
+  async deleteRecurringExpense(id) {
+    const url = `${API_BASE_URL}/recurring-expenses/${id}/`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+
+    if (response.status === 401) {
+      api.logout();
+      window.location.reload();
+      throw new Error('Sessão expirada.');
+    }
+    if (!response.ok) {
+      throw new Error('Falha ao remover a mensalidade.');
+    }
+    return true;
   }
 };

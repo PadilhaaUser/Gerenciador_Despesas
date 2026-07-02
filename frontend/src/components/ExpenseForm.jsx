@@ -10,11 +10,14 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, ba
     data: new Date().toISOString().split('T')[0], // Padrão para hoje
     descricao: '',
     banco: '',
+    isRecorrente: false,
+    mesesTotais: 12,
   };
 
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [detectedFeedback, setDetectedFeedback] = useState('');
 
   // Prefilha os campos ao entrar no modo de edição
   useEffect(() => {
@@ -26,19 +29,90 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, ba
         data: editingExpense.data,
         descricao: editingExpense.descricao || '',
         banco: editingExpense.banco || '',
+        isRecorrente: false,
+        mesesTotais: 12,
       });
       setErrors({});
+      setDetectedFeedback('');
     } else {
       setFormData(initialFormState);
+      setDetectedFeedback('');
     }
   }, [editingExpense]);
 
+  const detectDateFromTitle = (titleText) => {
+    if (!titleText) return null;
+
+    const currentYear = new Date().getFullYear();
+    let day = null, month = null, year = null;
+
+    // 1. Tentar formato DD/MM/AAAA (ex: 15/07/2026)
+    const matchFull = titleText.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\b/);
+    if (matchFull) {
+      day = parseInt(matchFull[1], 10);
+      month = parseInt(matchFull[2], 10);
+      year = parseInt(matchFull[3], 10);
+    } else {
+      // 2. Tentar formato DD/MM (ex: 15/07)
+      const matchDayMonth = titleText.match(/\b(\d{1,2})[\/\-](\d{1,2})\b/);
+      if (matchDayMonth) {
+        day = parseInt(matchDayMonth[1], 10);
+        month = parseInt(matchDayMonth[2], 10);
+        year = currentYear;
+      } else {
+        // 3. Tentar "dia DD" ou "vence DD" ou "vencimento DD" (ex: dia 15)
+        const matchDayOnly = titleText.match(/(?:dia|vence|vencimento|venc)\s+(\d{1,2})\b/i);
+        if (matchDayOnly) {
+          day = parseInt(matchDayOnly[1], 10);
+          // Usa o mês e ano do campo de data atual ou da data de hoje
+          const baseDate = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
+          month = baseDate.getMonth() + 1;
+          year = baseDate.getFullYear();
+        }
+      }
+    }
+
+    if (day !== null && month !== null && year !== null) {
+      // Valida se a data é válida
+      const testDate = new Date(year, month - 1, day);
+      if (
+        testDate.getFullYear() === year &&
+        testDate.getMonth() === month - 1 &&
+        testDate.getDate() === day
+      ) {
+        return {
+          isoDate: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+          formatted: `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`
+        };
+      }
+    }
+
+    return null;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+      
+      // Se alterou o título, tenta detectar data
+      if (name === 'titulo') {
+        const detected = detectDateFromTitle(value);
+        if (detected) {
+          updated.data = detected.isoDate;
+          setDetectedFeedback(`Data identificada: ${detected.formatted}`);
+        }
+      }
+      
+      return updated;
+    });
+
+    // Limpa feedback se o usuário alterar a data manualmente
+    if (name === 'data') {
+      setDetectedFeedback('');
+    }
+
     // Limpa erro específico ao digitar
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
@@ -53,6 +127,9 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, ba
     }
     if (!formData.categoria) newErrors.categoria = 'A categoria é obrigatória.';
     if (!formData.data) newErrors.data = 'A data é obrigatória.';
+    if (formData.isRecorrente && (!formData.mesesTotais || parseInt(formData.mesesTotais) < 2)) {
+      newErrors.mesesTotais = 'Insira uma duração de pelo menos 2 meses.';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -66,9 +143,21 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, ba
     try {
       // Prepara os dados: se banco for string vazia, envia null
       const dataToSend = {
-        ...formData,
+        titulo: formData.titulo,
+        valor: formData.valor,
+        categoria: formData.categoria,
+        descricao: formData.descricao,
         banco: formData.banco ? parseInt(formData.banco) : null,
       };
+
+      if (formData.isRecorrente && !editingExpense) {
+        dataToSend.data_inicio = formData.data;
+        dataToSend.meses_totais = parseInt(formData.mesesTotais);
+        dataToSend.isRecorrente = true;
+      } else {
+        dataToSend.data = formData.data;
+      }
+
       await onSubmit(dataToSend);
       
       // Animação de confete apenas ao criar novas despesas!
@@ -84,6 +173,7 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, ba
       // Limpa formulário se não estiver editando
       if (!editingExpense) {
         setFormData(initialFormState);
+        setDetectedFeedback('');
       }
     } catch (err) {
       console.error(err);
@@ -139,6 +229,11 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, ba
               {Array.isArray(errors.titulo) ? errors.titulo[0] : errors.titulo}
             </span>
           )}
+          {detectedFeedback && (
+            <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#10b981', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 500 }}>
+              <span>📅</span> {detectedFeedback}
+            </div>
+          )}
         </div>
 
         {/* Valor */}
@@ -179,6 +274,13 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, ba
             <option value="transporte">Transporte</option>
             <option value="lazer">Lazer</option>
             <option value="saude">Saúde</option>
+            <option value="aluguel">Aluguel</option>
+            <option value="assinaturas">Assinaturas</option>
+            <option value="luz">Luz</option>
+            <option value="agua">Água</option>
+            <option value="internet">Internet</option>
+            <option value="produtos">Produtos (geral)</option>
+            <option value="roupas">Roupas</option>
             <option value="outros">Outros</option>
           </select>
           {errors.categoria && (
@@ -251,6 +353,59 @@ export default function ExpenseForm({ onSubmit, editingExpense, onCancelEdit, ba
             </span>
           )}
         </div>
+
+        {/* Mensalidade / Recorrência (Apenas ao Criar) */}
+        {!editingExpense && (
+          <div style={{
+            margin: '1.25rem 0',
+            padding: '0.85rem',
+            background: 'rgba(255,255,255,0.02)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px dashed rgba(255,255,255,0.08)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                id="isRecorrente"
+                name="isRecorrente"
+                checked={formData.isRecorrente}
+                onChange={(e) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    isRecorrente: e.target.checked
+                  }));
+                }}
+                style={{ width: 'auto', cursor: 'pointer', margin: 0 }}
+              />
+              <label htmlFor="isRecorrente" className="form-label" style={{ marginBottom: 0, cursor: 'pointer', fontWeight: 600 }}>
+                É uma mensalidade (despesa recorrente)?
+              </label>
+            </div>
+
+            {formData.isRecorrente && (
+              <div className="form-group animate-fade-in" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+                <label htmlFor="mesesTotais" className="form-label">Duração (quantidade de meses)</label>
+                <input
+                  type="number"
+                  id="mesesTotais"
+                  name="mesesTotais"
+                  value={formData.mesesTotais}
+                  onChange={handleChange}
+                  min="2"
+                  max="60"
+                  className="input-custom"
+                  style={{ width: '100%' }}
+                  required
+                />
+                {errors.mesesTotais && (
+                  <span style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '0.2rem', display: 'block' }}>
+                    {errors.mesesTotais}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Ações */}
         <div className="btn-group-row">

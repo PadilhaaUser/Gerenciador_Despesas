@@ -8,6 +8,13 @@ export default function Filters({ filters, onFilterChange, onRefresh, loading, b
     { value: 'transporte', label: 'Transporte' },
     { value: 'lazer', label: 'Lazer' },
     { value: 'saude', label: 'Saúde' },
+    { value: 'aluguel', label: 'Aluguel' },
+    { value: 'assinaturas', label: 'Assinaturas' },
+    { value: 'luz', label: 'Luz' },
+    { value: 'agua', label: 'Água' },
+    { value: 'internet', label: 'Internet' },
+    { value: 'produtos', label: 'Produtos (geral)' },
+    { value: 'roupas', label: 'Roupas' },
     { value: 'outros', label: 'Outros' },
   ];
 

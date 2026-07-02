@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Edit3, Inbox, Calendar, Tag, Building2 } from 'lucide-react';
+import { Trash2, Edit3, Inbox, Calendar, Tag, Building2, Repeat } from 'lucide-react';
 
 export default function ExpenseList({ expenses, onDelete, onEdit, editingId }) {
   // Formatar Moeda em BRL
@@ -74,6 +74,26 @@ export default function ExpenseList({ expenses, onDelete, onEdit, editingId }) {
                         </span>
                       </>
                     )}
+                    {expense.recurring_expense && (
+                      <>
+                        <span className="dot" />
+                        <span 
+                          className="badge" 
+                          style={{ 
+                            background: 'rgba(139, 92, 246, 0.12)', 
+                            color: '#c084fc',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            borderLeft: '3px solid #8b5cf6'
+                          }}
+                          title="Mensalidade / Despesa Recorrente"
+                        >
+                          <Repeat size={10} />
+                          Parcela {expense.num_parcela}
+                        </span>
+                      </>
+                    )}
                     <span className="dot" />
                     <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                       <Calendar size={12} /> {formatDate(expense.data)}
@@ -106,8 +126,25 @@ export default function ExpenseList({ expenses, onDelete, onEdit, editingId }) {
                   {/* Excluir */}
                   <button
                     onClick={() => {
-                      if (window.confirm(`Tem certeza que deseja remover "${expense.titulo}"?`)) {
-                        onDelete(expense.id);
+                      if (expense.recurring_expense) {
+                        const deleteSeries = window.confirm(
+                          `Esta despesa "${expense.titulo}" faz parte de uma mensalidade recorrente.\n\n` +
+                          `Deseja excluir TODA a série de mensalidades (todas as parcelas)?\n` +
+                          `- Clique em OK para excluir TODAS as parcelas.\n` +
+                          `- Clique em CANCELAR para ser perguntado se deseja excluir apenas esta parcela.`
+                        );
+                        if (deleteSeries) {
+                          onDelete(expense.id, expense.recurring_expense, true);
+                        } else {
+                          const deleteSingle = window.confirm(`Deseja excluir APENAS esta parcela "${expense.titulo}"?`);
+                          if (deleteSingle) {
+                            onDelete(expense.id, expense.recurring_expense, false);
+                          }
+                        }
+                      } else {
+                        if (window.confirm(`Tem certeza que deseja remover "${expense.titulo}"?`)) {
+                          onDelete(expense.id);
+                        }
                       }
                     }}
                     className="btn-danger-icon"

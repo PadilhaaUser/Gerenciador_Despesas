@@ -45,12 +45,72 @@ class Bank(models.Model):
         return self.nome
 
 
+class RecurringExpense(models.Model):
+    CATEGORIA_CHOICES = [
+        ('alimentacao', 'Alimentação'),
+        ('transporte', 'Transporte'),
+        ('lazer', 'Lazer'),
+        ('saude', 'Saúde'),
+        ('aluguel', 'Aluguel'),
+        ('assinaturas', 'Assinaturas'),
+        ('luz', 'Luz'),
+        ('agua', 'Água'),
+        ('internet', 'Internet'),
+        ('produtos', 'Produtos (geral)'),
+        ('roupas', 'Roupas'),
+        ('outros', 'Outros'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='recurring_expenses',
+        verbose_name="Usuário"
+    )
+    banco = models.ForeignKey(
+        Bank,
+        on_delete=models.SET_NULL,
+        related_name='recurring_expenses',
+        null=True,
+        blank=True,
+        verbose_name="Banco"
+    )
+    titulo = models.CharField(max_length=255, verbose_name="Título")
+    valor = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor")
+    categoria = models.CharField(
+        max_length=20,
+        choices=CATEGORIA_CHOICES,
+        verbose_name="Categoria"
+    )
+    data_inicio = models.DateField(verbose_name="Data de Início")
+    meses_totais = models.PositiveIntegerField(default=12, verbose_name="Duração (meses)")
+    descricao = models.TextField(blank=True, null=True, verbose_name="Descrição")
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+
+    class Meta:
+        verbose_name = "Mensalidade"
+        verbose_name_plural = "Mensalidades"
+        ordering = ['-data_inicio', '-id']
+
+    def __str__(self):
+        return f"{self.titulo} - R$ {self.valor} ({self.meses_totais} meses)"
+
+
 class Expense(models.Model):
     CATEGORIA_CHOICES = [
         ('alimentacao', 'Alimentação'),
         ('transporte', 'Transporte'),
         ('lazer', 'Lazer'),
         ('saude', 'Saúde'),
+        ('aluguel', 'Aluguel'),
+        ('assinaturas', 'Assinaturas'),
+        ('luz', 'Luz'),
+        ('agua', 'Água'),
+        ('internet', 'Internet'),
+        ('produtos', 'Produtos (geral)'),
+        ('roupas', 'Roupas'),
         ('outros', 'Outros'),
     ]
 
@@ -70,6 +130,15 @@ class Expense(models.Model):
         blank=True,
         verbose_name="Banco"
     )
+    recurring_expense = models.ForeignKey(
+        RecurringExpense,
+        on_delete=models.CASCADE,
+        related_name='expenses',
+        null=True,
+        blank=True,
+        verbose_name="Mensalidade Origem"
+    )
+    num_parcela = models.IntegerField(null=True, blank=True, verbose_name="Número da Parcela")
     titulo = models.CharField(max_length=255, verbose_name="Título")
     valor = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor")
     categoria = models.CharField(

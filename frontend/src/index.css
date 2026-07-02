@@ -33,6 +33,13 @@
   --cat-transporte: #fb923c; /* Laranja */
   --cat-lazer: #f472b6; /* Rosa */
   --cat-saude: #34d399; /* Verde esmeralda */
+  --cat-aluguel: #fb7185; /* Rosa claro/avermelhado */
+  --cat-assinaturas: #38bdf8; /* Azul céu */
+  --cat-luz: #f59e0b; /* Âmbar/Amarelo */
+  --cat-agua: #0ea5e9; /* Azul água */
+  --cat-internet: #6366f1; /* Índigo */
+  --cat-produtos: #ec4899; /* Rosa choque */
+  --cat-roupas: #14b8a6; /* Teal */
   --cat-outros: #a78bfa; /* Violeta */
   
   --radius-sm: 8px;
@@ -493,6 +500,13 @@ body {
 .cat-transporte { background-color: var(--cat-transporte); }
 .cat-lazer { background-color: var(--cat-lazer); }
 .cat-saude { background-color: var(--cat-saude); }
+.cat-aluguel { background-color: var(--cat-aluguel); }
+.cat-assinaturas { background-color: var(--cat-assinaturas); }
+.cat-luz { background-color: var(--cat-luz); }
+.cat-agua { background-color: var(--cat-agua); }
+.cat-internet { background-color: var(--cat-internet); }
+.cat-produtos { background-color: var(--cat-produtos); }
+.cat-roupas { background-color: var(--cat-roupas); }
 .cat-outros { background-color: var(--cat-outros); }
 
 .badge {
@@ -507,6 +521,13 @@ body {
 .badge.transporte { background: rgba(251, 146, 60, 0.15); color: var(--cat-transporte); }
 .badge.lazer { background: rgba(244, 114, 182, 0.15); color: var(--cat-lazer); }
 .badge.saude { background: rgba(52, 211, 153, 0.15); color: var(--cat-saude); }
+.badge.aluguel { background: rgba(251, 113, 133, 0.15); color: var(--cat-aluguel); }
+.badge.assinaturas { background: rgba(56, 189, 248, 0.15); color: var(--cat-assinaturas); }
+.badge.luz { background: rgba(245, 158, 11, 0.15); color: var(--cat-luz); }
+.badge.agua { background: rgba(14, 165, 233, 0.15); color: var(--cat-agua); }
+.badge.internet { background: rgba(99, 102, 241, 0.15); color: var(--cat-internet); }
+.badge.produtos { background: rgba(236, 72, 153, 0.15); color: var(--cat-produtos); }
+.badge.roupas { background: rgba(20, 184, 166, 0.15); color: var(--cat-roupas); }
 .badge.outros { background: rgba(167, 139, 250, 0.15); color: var(--cat-outros); }
 
 /* Gráfico */

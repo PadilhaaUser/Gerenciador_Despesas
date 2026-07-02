@@ -16,6 +16,13 @@ export default function ExpenseChart({ expenses }) {
     transporte: { name: 'Transporte', value: 0, color: '#fb923c' },
     lazer: { name: 'Lazer', value: 0, color: '#f472b6' },
     saude: { name: 'Saúde', value: 0, color: '#34d399' },
+    aluguel: { name: 'Aluguel', value: 0, color: '#fb7185' },
+    assinaturas: { name: 'Assinaturas', value: 0, color: '#38bdf8' },
+    luz: { name: 'Luz', value: 0, color: '#f59e0b' },
+    agua: { name: 'Água', value: 0, color: '#0ea5e9' },
+    internet: { name: 'Internet', value: 0, color: '#6366f1' },
+    produtos: { name: 'Produtos (geral)', value: 0, color: '#ec4899' },
+    roupas: { name: 'Roupas', value: 0, color: '#14b8a6' },
     outros: { name: 'Outros', value: 0, color: '#a78bfa' },
   };
 

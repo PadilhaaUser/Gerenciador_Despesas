@@ -70,14 +70,23 @@ export default function App() {
       setEditingExpense(null);
     } else {
       // Criar
-      await api.createExpense(formData);
+      if (formData.isRecorrente) {
+        const { isRecorrente, ...cleanData } = formData;
+        await api.createRecurringExpense(cleanData);
+      } else {
+        await api.createExpense(formData);
+      }
     }
     await loadExpenses();
   };
 
-  const handleDeleteExpense = async (id) => {
+  const handleDeleteExpense = async (id, recurringExpenseId = null, deleteEntireSeries = false) => {
     try {
-      await api.deleteExpense(id);
+      if (deleteEntireSeries && recurringExpenseId) {
+        await api.deleteRecurringExpense(recurringExpenseId);
+      } else {
+        await api.deleteExpense(id);
+      }
       // Se estava editando a despesa excluída, cancela a edição
       if (editingExpense && editingExpense.id === id) {
         setEditingExpense(null);

@@ -5,8 +5,18 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-from .models import Expense, Bank
-from .serializers import ExpenseSerializer, BankSerializer
+from .models import Expense, Bank, RecurringExpense
+from .serializers import ExpenseSerializer, BankSerializer, RecurringExpenseSerializer
+import datetime
+import calendar
+
+
+def add_months(sourcedate, months):
+    month = sourcedate.month - 1 + months
+    year = sourcedate.year + month // 12
+    month = month % 12 + 1
+    day = min(sourcedate.day, calendar.monthrange(year, month)[1])
+    return datetime.date(year, month, day)
 
 
 class BankViewSet(viewsets.ModelViewSet):
@@ -22,6 +32,48 @@ class BankViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+class RecurringExpenseViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para listar, criar, detalhar e deletar mensalidades/despesas recorrentes.
+    Exige autenticação por Token e filtra mensalidades pelo usuário autenticado.
+    Ao criar uma mensalidade, gera automaticamente as despesas correspondentes para os próximos meses.
+    """
+    serializer_class = RecurringExpenseSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return RecurringExpense.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        recurring_expense = serializer.save(user=self.request.user)
+        
+        # Gera as parcelas correspondentes no modelo Expense
+        data_inicio = recurring_expense.data_inicio
+        meses = recurring_expense.meses_totais
+        
+        for i in range(meses):
+            parcela_date = add_months(data_inicio, i)
+            # Título amigável com indicação da parcela: "Título (1/3)"
+            titulo_parcela = f"{recurring_expense.titulo} ({i + 1}/{meses})"
+            
+            Expense.objects.create(
+                user=self.request.user,
+                banco=recurring_expense.banco,
+                recurring_expense=recurring_expense,
+                num_parcela=i + 1,
+                titulo=titulo_parcela,
+                valor=recurring_expense.valor,
+                categoria=recurring_expense.categoria,
+                data=parcela_date,
+                descricao=recurring_expense.descricao
+            )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

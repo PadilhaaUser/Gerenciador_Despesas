@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Expense, Bank
+from .models import Expense, Bank, RecurringExpense
 
 
 class BankSerializer(serializers.ModelSerializer):
@@ -15,6 +15,40 @@ class BankSerializer(serializers.ModelSerializer):
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
             raise serializers.ValidationError("Você já possui um banco com este nome.")
+        return value
+
+
+class RecurringExpenseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecurringExpense
+        fields = [
+            'id',
+            'titulo',
+            'valor',
+            'categoria',
+            'data_inicio',
+            'meses_totais',
+            'descricao',
+            'banco',
+            'created_at',
+            'updated_at'
+        ]
+
+    def validate_valor(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("O valor da mensalidade deve ser maior que zero.")
+        return value
+
+    def validate_meses_totais(self, value):
+        if value < 2:
+            raise serializers.ValidationError("A duração da mensalidade deve ser de pelo menos 2 meses.")
+        return value
+
+    def validate_banco(self, value):
+        if value is not None:
+            user = self.context['request'].user
+            if value.user != user:
+                raise serializers.ValidationError("Banco inválido.")
         return value
 
 
@@ -36,6 +70,8 @@ class ExpenseSerializer(serializers.ModelSerializer):
             'banco',
             'banco_nome',
             'banco_cor',
+            'recurring_expense',
+            'num_parcela',
             'created_at', 
             'updated_at'
         ]
