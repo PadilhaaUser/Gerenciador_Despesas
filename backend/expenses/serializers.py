@@ -42,6 +42,8 @@ class RecurringExpenseSerializer(serializers.ModelSerializer):
     def validate_meses_totais(self, value):
         if value < 2:
             raise serializers.ValidationError("A duração da mensalidade deve ser de pelo menos 2 meses.")
+        if value > 60:
+            raise serializers.ValidationError("A duração máxima da mensalidade é de 60 meses (5 anos).")
         return value
 
     def validate_banco(self, value):
@@ -75,6 +77,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
             'created_at', 
             'updated_at'
         ]
+        read_only_fields = ['recurring_expense', 'num_parcela']
         
     def validate_valor(self, value):
         if value <= 0:

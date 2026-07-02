@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
@@ -9,8 +10,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from .env
 load_dotenv(BASE_DIR / '.env')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-7odlz*f*wnmk%w9yexu)-3damjiy=1q(9^9#pjkf^*ca2uee*0')
+# SECURITY: A SECRET_KEY deve ser definida via variável de ambiente.
+# Em desenvolvimento, um fallback é gerado automaticamente.
+_secret = os.getenv('SECRET_KEY')
+if not _secret:
+    if os.getenv('DEBUG', 'True').lower() in ('true', '1', 't'):
+        _secret = 'dev-only-insecure-key-do-not-use-in-production'
+        logging.warning('SECRET_KEY não definida. Usando chave de desenvolvimento insegura.')
+    else:
+        raise ValueError(
+            'A variável de ambiente SECRET_KEY é obrigatória em produção. '
+            'Defina-a no arquivo .env ou nas variáveis de ambiente do servidor.'
+        )
+SECRET_KEY = _secret
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
@@ -189,5 +201,37 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '30/minute',
+        'user': '120/minute',
+        'auth': '5/minute',
+    }
 }
+
+# ============================================
+# SEGURANÇA EM PRODUÇÃO
+# ============================================
+if not DEBUG:
+    # Forçar HTTPS
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 ano
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Cookies seguros
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
+
+    # Proteções de conteúdo
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'

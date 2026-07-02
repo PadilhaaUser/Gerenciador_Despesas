@@ -2,13 +2,20 @@ from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.throttling import AnonRateThrottle
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from rest_framework.authtoken.models import Token
 from .models import Expense, Bank, RecurringExpense
 from .serializers import ExpenseSerializer, BankSerializer, RecurringExpenseSerializer
 import datetime
 import calendar
+import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def add_months(sourcedate, months):
@@ -132,22 +139,42 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         return context
 
 
+class AuthRateThrottle(AnonRateThrottle):
+    """Throttle específico para endpoints de autenticação (login/registro)."""
+    scope = 'auth'
+
+
 class RegisterView(APIView):
     """
     View para registrar um novo usuário e gerar um Token DRF inicial.
+    Inclui validação de senha do Django, sanitização de username e rate-limiting.
     """
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
     
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        email = request.data.get('email', '')
+        username = request.data.get('username', '').strip()
+        password = request.data.get('password', '')
+        email = request.data.get('email', '').strip()
         
         if not username or not password:
             return Response({'error': 'Usuário e senha são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Sanitização de username: apenas alfanuméricos, underscores e hifens
+        if not re.match(r'^[a-zA-Z0-9_-]{3,30}$', username):
+            return Response(
+                {'error': 'O nome de usuário deve ter entre 3 e 30 caracteres e conter apenas letras, números, _ ou -.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
             
         if User.objects.filter(username=username).exists():
             return Response({'error': 'Este nome de usuário já está em uso.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validação de senha usando os validators configurados no Django
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            return Response({'error': e.messages}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
             user = User.objects.create_user(username=username, password=password, email=email)
@@ -160,19 +187,25 @@ class RegisterView(APIView):
                     'email': user.email
                 }
             }, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            logger.exception('Erro inesperado ao registrar usuário.')
+            return Response(
+                {'error': 'Ocorreu um erro interno. Tente novamente mais tarde.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class LoginView(APIView):
     """
     View para autenticar um usuário existente e retornar o Token DRF correspondente.
+    Inclui rate-limiting para prevenir brute-force.
     """
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
     
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
+        username = request.data.get('username', '').strip()
+        password = request.data.get('password', '')
         
         if not username or not password:
             return Response({'error': 'Usuário e senha são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
